@@ -1,0 +1,54 @@
+[
+  {
+    "id": "bereavement_good",
+    "title": "Bereavement, handled with care",
+    "blurb": "The agent notices, slows down and offers support",
+    "customer": "Mrs Evans",
+    "context": "Collections · Missed payment",
+    "turns": [
+      {"speaker": "agent", "text": "Hello, my name is Priya and I'm calling from Northbridge Finance. Is now a good time to talk for a couple of minutes?"},
+      {"speaker": "customer", "text": "Oh, hello. Er, I suppose so. What's it about?"},
+      {"speaker": "agent", "text": "The reason for my call is your car finance agreement, there's been a missed payment. This call may be recorded for training and quality."},
+      {"speaker": "customer", "text": "Oh dear. I'm sorry, it's been a difficult few months. My husband passed away in the spring and he used to deal with all of this."},
+      {"speaker": "agent", "text": "I'm so sorry for your loss, Mrs Evans. There's no pressure at all, and nothing needs to be paid today. Would you like to carry on, or would another time be better?"},
+      {"speaker": "customer", "text": "Thank you, that's kind. I do get a bit muddled with the paperwork."},
+      {"speaker": "agent", "text": "That's completely understandable. I'll go step by step and you can stop me whenever you like. You're also very welcome to have someone you trust join us, and we have a specialist support team who can help after a bereavement."},
+      {"speaker": "customer", "text": "My daughter helps me with things. Could we speak when she's here?"},
+      {"speaker": "agent", "text": "Of course. I'll call you back whenever suits you both. If you'd like to check I'm genuine, you can ring the number on your statement."},
+      {"speaker": "customer", "text": "Thank you. That's a relief."}
+    ]
+  },
+  {
+    "id": "bereavement_rushed",
+    "title": "The same call, rushed",
+    "blurb": "A polite agent who keeps going after the customer opens up",
+    "customer": "Mrs Evans",
+    "context": "Collections · Missed payment",
+    "turns": [
+      {"speaker": "agent", "text": "Hi, it's Priya from Northbridge Finance. I'm calling about the arrears on your car agreement."},
+      {"speaker": "customer", "text": "Oh. Hello. I'm sorry, it's been a difficult time. My husband passed away in the spring and he always dealt with all of this."},
+      {"speaker": "agent", "text": "I'm sorry to hear that. Anyway, the arrears are one hundred and eighty-two pounds and I do need to take a payment today to avoid a default notice. Can I take a card payment now?", "duration_ms": 9500},
+      {"speaker": "customer", "text": "Oh, I don't really understand. I'm a bit confused, I'd have to ask my daughter."},
+      {"speaker": "agent", "text": "It's quite simple. You just need to confirm the card details and I can set up the payment for you."},
+      {"speaker": "customer", "text": "I'm really not sure about this. I'd rather call you back."},
+      {"speaker": "agent", "text": "I do understand, but it would really help to sort the payment today so it doesn't go any further."}
+    ]
+  },
+  {
+    "id": "hard_to_hear",
+    "title": "Hard to hear, hard to follow",
+    "blurb": "A rough start, then the agent changes course",
+    "customer": "Mr Hassan",
+    "context": "Collections · Failed direct debit",
+    "turns": [
+      {"speaker": "agent", "text": "Hello, my name is Tom and I'm calling from Northbridge Finance about your account. Do you have a couple of minutes?"},
+      {"speaker": "customer", "text": "Sorry, what was that? I'm a bit hard of hearing and the line's not great."},
+      {"speaker": "agent", "text": "So the direct debit mandate on your agreement was returned unpaid, there's an outstanding balance, and we need to arrange payment of the arrears this week."},
+      {"speaker": "customer", "text": "I'm sorry, you've lost me. Could you say that again, a bit slower?"},
+      {"speaker": "agent", "text": "Of course, I'm sorry, that was too fast. Let me say that again more simply. A payment didn't go through on your account. Nothing needs to be paid today. Would it help if I wrote to you, or if a family member joined us on the call?"},
+      {"speaker": "customer", "text": "Yes, my son lives nearby. Could you write to me too, please?"},
+      {"speaker": "agent", "text": "Absolutely. I'll send a clear letter this week and we can speak again whenever your son can join. If you'd like to check I'm genuine, please ring the number on your statement."},
+      {"speaker": "customer", "text": "Thank you, that's much clearer."}
+    ]
+  }
+]
