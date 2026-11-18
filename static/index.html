@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Care · a live coach for calls with customers who may need more support</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="page">
+    <div class="window" id="window">
+
+      <!-- floating "trust checks" pill, like a sticker on the corner of the window -->
+      <div class="float-checks" id="floatChecks" aria-live="polite">
+        <div class="fc-title">Trust checks</div>
+        <div class="fc-count"><span id="fcDone">0</span> of <span id="fcTotal">6</span> <small>done</small></div>
+        <div class="fc-dashes" id="fcDashes"></div>
+      </div>
+
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" id="brandMark"></span>
+          <span class="brand-name">Care</span>
+        </div>
+        <nav class="tabs" role="tablist">
+          <button class="tab active" data-tab="live" role="tab">Live call</button>
+          <button class="tab" data-tab="recap" role="tab">Recap</button>
+          <button class="tab" data-tab="how" role="tab">How it works</button>
+        </nav>
+        <div class="switches">
+          <label class="switch" title="The simulated customer speaks their replies out loud.">
+            <input type="checkbox" id="voiceToggle" checked>
+            <span class="track"><span class="knob"></span></span>
+            <span class="switch-label">Voice the customer</span>
+          </label>
+          <label class="switch" title="Care reads its nudges out loud. Use headphones.">
+            <input type="checkbox" id="whisperToggle">
+            <span class="track"><span class="knob"></span></span>
+            <span class="switch-label">Whisper nudges</span>
+          </label>
+        </div>
+      </header>
+
+      <main class="grid">
+        <!-- LEFT -->
+        <section class="left">
+          <div class="callhead">
+            <div class="callrow">
+              <div class="call-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>
+              </div>
+              <div class="call-meta">
+                <h1 id="callTitle">Outbound call · New customer</h1>
+                <p id="callSub">Collections · <span id="timer">00:00</span></p>
+              </div>
+              <button class="btn primary" id="newBtn">New call</button>
+              <button class="btn ghost" id="recapBtn">Share recap</button>
+            </div>
+          </div>
+
+          <div class="card gauge-card" id="gaugeCard" data-level="idle">
+            <div class="peek" id="peek"></div>
+            <div class="gauge-wrap">
+              <svg viewBox="0 0 220 132" class="gauge" id="gauge" role="img" aria-label="Trust meter"></svg>
+              <div class="gauge-label">Care <b id="scoreNum">–</b></div>
+              <div class="progress">
+                <div class="progress-top"><span>Trust checks</span><span id="progPct">0%</span></div>
+                <div class="bar"><i id="progBar"></i></div>
+              </div>
+            </div>
+            <div class="gauge-text">
+              <div class="pill" id="levelPill"><i></i><span>Ready</span></div>
+              <h2 id="headline">Ready when you are</h2>
+              <p id="sub">Start talking, or play a demo call. Care listens for signs a customer needs more support, and coaches you in real time.</p>
+              <ul class="checks" id="checks"></ul>
+            </div>
+          </div>
+
+          <div class="card next" id="nextCard">
+            <div class="next-body">
+              <div class="eyebrow" id="nextTitle">Your next step</div>
+              <p class="say" id="nextSay">Say hello and tell them who you are. I'll listen for anything they need from you.</p>
+              <p class="why" id="nextWhy"></p>
+            </div>
+            <div class="next-actions">
+              <button class="btn primary" id="copyBtn">Copy</button>
+              <button class="btn ghost" id="speakBtn">Say it aloud</button>
+            </div>
+          </div>
+
+          <div class="card care-card" id="careCard">
+            <div class="care-head">
+              <div class="eyebrow">Care cues</div>
+              <span class="hint" id="careHint">Signs they may need more time or support. Not a diagnosis.</span>
+            </div>
+            <div class="cue-row" id="cueRow"></div>
+            <div class="eyebrow sub-eyebrow">How you've adapted</div>
+            <ul class="checks" id="actions"></ul>
+          </div>
+
+          <div class="moments">
+            <div class="moments-head"><h3 id="momentsTitle">Nothing flagged yet</h3><span class="hint">Tap a moment for the detail</span></div>
+            <div id="momentList" class="moment-list"></div>
+          </div>
+        </section>
+
+        <!-- RIGHT -->
+        <aside class="card panel">
+          <div class="panel-head">
+            <div class="panel-mascot" id="panelMascot"></div>
+            <div>
+              <div class="eyebrow">Care</div>
+              <div class="panel-title" id="panelTitle">Listening along with you</div>
+            </div>
+            <span class="live-dot" id="liveDot" title="Microphone"></span>
+          </div>
+
+          <div class="signals" id="signals"></div>
+
+          <div class="thread" id="thread" aria-live="polite">
+            <div class="empty" id="empty">
+              <p>Choose who you're calling. You open the call as the agent, then speak or type, and the customer answers back.</p>
+              <button class="btn primary" id="startBtn" type="button">Choose a customer</button>
+            </div>
+          </div>
+
+          <div class="demos">
+            <span class="demos-label">Play a demo</span>
+            <div class="demo-chips" id="demoChips"></div>
+            <button class="chip stop" id="stopBtn" hidden>Stop demo</button>
+          </div>
+
+          <div class="composer-wrap">
+            <div class="role" role="group" aria-label="Who is speaking">
+              <button class="role-btn active" data-role="agent">I'm the agent</button>
+              <button class="role-btn" data-role="customer">I'm the customer</button>
+            </div>
+            <form class="composer" id="composer" autocomplete="off">
+              <button type="button" class="mic" id="micBtn" aria-label="Start microphone">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+              </button>
+              <input id="textIn" type="text" placeholder="Say it, or type what you'd say…" maxlength="500">
+              <button type="submit" class="go">Go</button>
+            </form>
+            <p class="mic-note" id="micNote"></p>
+          </div>
+        </aside>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal" id="modal" hidden>
+    <div class="sheet card">
+      <button class="close" id="modalClose" aria-label="Close">×</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
