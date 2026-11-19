@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import customer, llm
+from . import customer
 from .analyzer import analyze_call, build_recap
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -35,11 +35,6 @@ class CallBody(BaseModel):
 
     def as_dicts(self) -> list[dict]:
         return [t.model_dump() for t in self.turns]
-
-
-@app.get("/api/config")
-def config():
-    return {"ai_second_opinion": llm.available()}
 
 
 @app.get("/api/personas")
@@ -71,16 +66,6 @@ def analyze(body: CallBody):
 @app.post("/api/recap")
 def recap(body: CallBody):
     return build_recap(body.as_dicts())
-
-
-@app.post("/api/second_opinion")
-def second_opinion(body: CallBody):
-    if not llm.available():
-        return {"available": False, "concerns": []}
-    try:
-        return {"available": True, "concerns": llm.second_opinion(body.as_dicts())}
-    except Exception as exc:  # never let the optional layer break the live call
-        return {"available": True, "concerns": [], "error": type(exc).__name__}
 
 
 @app.get("/")
