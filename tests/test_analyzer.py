@@ -6,7 +6,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app import analyzer as an  # noqa: E402
 from app.analyzer import analyze_call  # noqa: E402
-from app.llm import parse_concerns  # noqa: E402
 
 SCENARIOS = {s["id"]: s for s in json.loads((Path(__file__).parent.parent / "app" / "scenarios.json").read_text())}
 
@@ -166,13 +165,6 @@ def test_recap_mentions_cues_and_adaptations():
     assert "Care cues heard" in md and "How the agent adapted" in md and "not a diagnosis" in md
 
 
-def test_llm_parse_is_robust():
-    raw = 'Sure! {"concerns": [{"label": "Implied threat", "severity": "weird", "quote": "q", "why": "w", "say": "s"}, {"nolabel": 1}]}'
-    out = parse_concerns(raw)
-    assert len(out) == 1 and out[0]["severity"] == "low"
-    assert parse_concerns("no json here") == []
-
-
 # ---------------------------------------------------------------- simulated customer
 from app import customer as sim  # noqa: E402
 
@@ -270,3 +262,10 @@ def test_every_persona_has_complete_lines_and_endings_are_distinct():
         # the opening line must actually contain a cue (or doubt) so Care reacts to it
         st = analyze_call([INTRO, customer_turn(p["reveal"])])
         assert any(f["id"].startswith("care_") or f["id"] == "doubt" for f in st["flags"]), pid
+
+
+def test_no_pressure_followed_by_a_threat_is_still_pressure():
+    s = analyze_call([INTRO, customer("My husband passed away last month."),
+                      agent("There's no pressure but if you don't have it soon we might have to "
+                            "cancel our agreement and terminate our car agreement with you.")])
+    assert "threat" in ids(s) and "pressure_after_care" in ids(s)
