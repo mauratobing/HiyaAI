@@ -123,6 +123,8 @@ def reply(persona_id: str, turns: list[dict]) -> dict:
     ids = {f["id"] for f in state["flags"] if f["turn_index"] == last}
     text = turns[last]["text"]
     adapt = {k for k, pat in an._ADAPT.items() if pat.search(text)}
+    if ids & {"urgency", "threat", "commanding"}:
+        adapt -= {"pause"}
     checks = an._checks_in(text)
     done = {c["id"] for c in state["checklist"] if c["done"]}
     intro_done = {"name", "company"} <= done
