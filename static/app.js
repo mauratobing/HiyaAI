@@ -22,14 +22,13 @@
     playing: false,
     cancelDemo: false,
     scenarios: [],
-    aiEnabled: false,
-    aiConcerns: [],
     coachedTurns: new Set(),
     seq: 0,
     startedAt: null,
     openMoments: new Set(),
     practice: null,      // {id, name, ended} while a simulated customer is on the line
     personas: [],
+    autoListen: false,
     muted: false,        // ignore the mic while the customer's voice is playing
     replying: false,
     voiceCustomer: true,
@@ -211,7 +210,7 @@
 
   const KIND_ICON = { risk: "!", pace: "≈", doubt: "?", care: "♥", missing: "…" };
   const SEV_LABEL = { high: "High", medium: "Medium", low: "Low" };
-  function momentRow(f, key, ai = false) {
+  function momentRow(f, key) {
     const kindTag = f.kind === "care" ? "Care" : f.kind === "doubt" ? "Doubt" : SEV_LABEL[f.severity];
     const open = state.openMoments.has(key);
     const row = h("div", { class: `moment sev-${f.severity} kind-${f.kind} ${open ? "open" : ""}` },
@@ -224,7 +223,7 @@
       },
         h("div", { class: "m-ico" }, KIND_ICON[f.kind] || "!"),
         h("div", { class: "m-main" },
-          h("div", { class: "m-label" }, f.label, ai ? h("span", { class: "ai-badge" }, "AI") : null),
+          h("div", { class: "m-label" }, f.label),
           h("div", { class: "m-sub" },
             f.turn_index != null ? `Turn ${f.turn_index + 1} · ` : "", f.evidence ? `“${f.evidence}”` : "")),
         h("span", { class: "tag" }, kindTag)),
@@ -239,9 +238,7 @@
     list.replaceChildren();
     const real = a.flags.filter((f) => f.kind !== "care").reverse();
     real.forEach((f) => list.append(momentRow(f, `${f.id}-${f.turn_index}`)));
-    state.aiConcerns.forEach((c, i) =>
-      list.append(momentRow({ ...c, kind: "risk", turn_index: null }, `ai-${i}`, true)));
-    const n = real.length + state.aiConcerns.length;
+    const n = real.length;
     $("#momentsTitle").textContent = !a.started ? "Nothing flagged yet"
       : n === 0 ? "No flags so far. Nicely done." : `Care flagged ${n} moment${n > 1 ? "s" : ""} to review`;
   }
@@ -306,6 +303,7 @@
   /* --------------------------------------------------------------- transcript */
   function addBubble(turn, index) {
     $("#empty")?.remove();
+    $("#introCard")?.remove();
     const thread = $("#thread");
     const msg = h("div", { class: `msg ${turn.speaker}`, "data-i": index },
       h("div", { class: "who" }, turn.speaker === "agent" ? "You (agent)" : "Customer"),
@@ -339,20 +337,7 @@
     } catch (e) {
       $("#micNote").textContent = "Couldn't reach the server. Is it running?";
     }
-    if (state.aiEnabled && speaker === "agent") askAI();
     if (speaker === "agent" && state.practice && opts.reply !== false) customerReply();
-  }
-
-  let aiTimer;
-  function askAI() {
-    clearTimeout(aiTimer);
-    aiTimer = setTimeout(async () => {
-      try {
-        const r = await api("/api/second_opinion", { turns: state.turns });
-        state.aiConcerns = r.concerns || [];
-        if (state.analysis) renderMoments(state.analysis);
-      } catch (_) { /* optional layer: stay quiet */ }
-    }, 1200);
   }
 
   /* ----------------------------------------------------------------- speech */
@@ -386,22 +371,31 @@
 
   /* -------------------------------------------------------------- microphone */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let rec = null, utterStart = 0;
+  let rec = null, utterStart = 0, micGen = 0;
+  // One utterance at a time: the mic switches itself off when you stop talking, and stays off
+  // while the customer is speaking, so it can never transcribe the customer's voice as yours.
   function startMic() {
     if (!SR) { $("#micNote").textContent = "The mic needs Chrome or Edge. You can still type below."; return; }
     if (state.playing) stopDemo();
+    if (state.listening || state.muted || state.replying) return;
+    const gen = ++micGen;
+    let heard = false;
     rec = new SR();
-    rec.lang = "en-GB"; rec.continuous = true; rec.interimResults = true;
+    rec.lang = "en-GB"; rec.continuous = false; rec.interimResults = true;
     rec.onresult = (e) => {
-      if (state.muted) { utterStart = 0; return; }
+      if (gen !== micGen || state.muted || state.replying) return;
       let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const r = e.results[i];
         if (!utterStart) utterStart = performance.now();
         if (r.isFinal) {
           const dur = performance.now() - utterStart; utterStart = 0;
+          heard = true;
           $("#textIn").value = "";
+          state.autoListen = !!state.practice;          // keep the conversation hands-free in practice calls
           addTurn(state.role, r[0].transcript, dur);
+          stopMic(true);                                // you've finished: mic off
+          return;
         } else interim += r[0].transcript;
       }
       if (interim) $("#textIn").value = interim;
@@ -409,18 +403,24 @@
     rec.onerror = (e) => {
       if (e.error === "not-allowed" || e.error === "service-not-allowed") {
         $("#micNote").textContent = "Mic permission was blocked. Allow it in the address bar, or type instead.";
-        state.listening = false; syncMic();
+        state.listening = false; state.autoListen = false; syncMic();
       }
     };
-    rec.onend = () => { if (state.listening) { try { rec.start(); } catch (_) {} } else syncMic(); };
+    rec.onend = () => {
+      if (gen !== micGen) return;
+      state.listening = false; syncMic();
+      if (!heard) { state.autoListen = false; $("#micNote").textContent = "Mic off. Press the mic to speak."; }
+    };
     state.listening = true; syncMic();
-    try { rec.start(); $("#micNote").textContent = "Listening. Speak naturally."; } catch (_) {}
+    try { rec.start(); $("#micNote").textContent = "Listening. Say your piece, then pause."; } catch (_) { state.listening = false; syncMic(); }
   }
-  function stopMic() {
+  function stopMic(keepNote = false) {
+    micGen++;                                           // anything the old recognizer still says is ignored
     state.listening = false;
-    try { rec && rec.stop(); } catch (_) {}
+    try { rec && rec.abort(); } catch (_) {}
+    utterStart = 0;
     syncMic();
-    $("#micNote").textContent = "";
+    if (!keepNote) $("#micNote").textContent = "";
   }
   function syncMic() {
     $("#micBtn").classList.toggle("on", state.listening);
@@ -452,13 +452,15 @@
   const hideTyping = () => $("#typing")?.remove();
 
   async function customerSays(text) {
+    stopMic(true);                                      // never listen while the customer is talking
     let speaking = Promise.resolve();
     if (state.voiceCustomer && synth) {
       state.muted = true;
-      speaking = speak(text, { role: "customer" }).then(() => setTimeout(() => { state.muted = false; }, 400));
+      speaking = speak(text, { role: "customer" }).then(() => new Promise((r) => setTimeout(() => { state.muted = false; r(); }, 700)));
     }
     await addTurn("customer", text);
     await speaking;
+    state.muted = false;
   }
   async function customerReply() {
     const pr = state.practice;
@@ -471,6 +473,7 @@
       const r = await api("/api/customer_reply", { persona: pr.id, turns: state.turns });
       hideTyping();
       if (state.practice !== pr) return;
+      if (r.ended) pr.ended = true;
       if (r.text) await customerSays(r.text);
       if (r.ended) endCall();
     } catch (_) {
@@ -478,6 +481,8 @@
       $("#micNote").textContent = "Couldn't get a reply from the customer.";
     } finally {
       if (state.practice === pr) state.replying = false;
+      // hands-free: if you were speaking, hand the floor back by turning the mic on again
+      if (state.practice === pr && state.autoListen && !pr.ended && !state.listening) startMic();
     }
   }
   function endCall() {
@@ -497,19 +502,27 @@
     state.practice = pr;
     lockRole(true);
     $("#empty")?.remove();
-    // the call opens with the agent: "Hi, it's Sam from Northbridge Finance."
+    // the agent must open the call themselves: typed (a ready-made line) or spoken
     const opening = `Hi, it's ${cleanWord((agentName || "").split(/\s+/)[0], "Sam")} from ${(company || "").trim() || "Northbridge Finance"}.`;
-    $("#micNote").textContent = "The call has started.";
-    await addTurn("agent", opening, null, { reply: false });
-    if (state.voiceCustomer && synth) {
-      state.muted = true;
-      await speak(opening, { role: "agent" });
-      setTimeout(() => { state.muted = false; }, 400);
-    }
-    if (state.practice !== pr) return;
-    customerReply().then(() => {
-      if (state.practice === pr && !pr.ended) $("#micNote").textContent = "Your turn. Carry on: say why you're calling.";
-    });
+    showIntroCard(opening);
+    $("#micNote").textContent = "The call is connected. Introduce yourself: send the line above, or press the mic and say it.";
+  }
+  function showIntroCard(line) {
+    const input = h("input", { type: "text", class: "field", id: "introIn", value: line, maxlength: "200", "aria-label": "Your introduction" });
+    const send = () => {
+      const v = input.value.trim();
+      if (!v || !state.practice || state.turns.length) return;
+      addTurn("agent", v);
+    };
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); send(); } });
+    const card = h("div", { class: "intro-card", id: "introCard" },
+      h("b", {}, "Start the call"),
+      h("p", {}, "Say who you are and where you're calling from. Edit the line, then send it, or say it out loud."),
+      input,
+      h("div", { class: "row" },
+        h("button", { class: "btn primary", type: "button", onclick: send }, "Send intro"),
+        h("button", { class: "btn", type: "button", onclick: () => { if (!state.listening) startMic(); } }, "🎤 Say it instead")));
+    $("#thread").append(card);
   }
   function openSetup() {
     if (!state.personas.length) return;
@@ -544,12 +557,12 @@
     }, sc.title)));
     openModal(h("div", {},
       h("h2", {}, "New call"),
-      h("p", {}, "Who are you calling? Pick a customer. You open the call as the agent, and the customer answers back. Care coaches you as you go."),
+      h("p", {}, "Who are you calling? Pick a customer. You introduce yourself, typed or spoken, and the customer answers back. Care coaches you as you go."),
       h("h4", {}, "Customer"), grid,
       h("h4", {}, "Customer's name (optional)"), nameIn,
       h("h4", {}, "You are"),
       h("div", { class: "two" }, agentIn, companyIn),
-      h("p", { class: "fine" }, "The call opens with you: “Hi, it's Sam from Northbridge Finance.” Change the name and company if you like."),
+      h("p", { class: "fine" }, "You open the call yourself. You'll get a ready-made intro to send (“Hi, it's Sam from Northbridge Finance.”), or you can say it out loud."),
       h("h4", {}, "Mode"), modes,
       h("div", { class: "row" },
         h("button", { class: "btn primary", type: "button", onclick: () => startCall({ mode: sel.mode, persona: sel.persona, name: nameIn.value.trim(), agentName: agentIn.value, company: companyIn.value }) }, "Start call")),
@@ -582,7 +595,7 @@
   /* --------------------------------------------------------------- call state */
   function newCall(customer = "New customer", context = "Collections") {
     stopDemo(); state.cancelDemo = false;
-    state.turns = []; state.aiConcerns = []; state.coachedTurns = new Set(); state.startedAt = null;
+    state.turns = []; state.coachedTurns = new Set(); state.startedAt = null;
     state.openMoments = new Set(); state.seq++;
     state.practice = null; state.replying = false; state.muted = false; state.prevDone = new Set();
     lockRole(false);
@@ -640,7 +653,7 @@
       h("h4", {}, "Why voice"),
       h("p", {}, "The call is already audio. The agent's eyes and hands are busy, and the signs that matter (hesitation, asking you to repeat, pace) live in how things are said. A form or a report after the call arrives too late. The nudges are short enough to read at a glance or, with headphones on, hear as a whisper."),
       h("h4", {}, "Under the hood"),
-      h("p", {}, "Browser speech-to-text feeds a local rule engine that responds instantly. With an API key set, Claude adds an asynchronous second opinion on subtler issues. Only text is analysed, and nothing is stored.")));
+      h("p", {}, "Browser speech-to-text feeds a local rule engine that responds instantly. Only text is analysed, and nothing is stored.")));
   }
   function setTab(name) {
     document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
@@ -671,7 +684,7 @@
     $("#newBtn").addEventListener("click", () => { setTab("live"); openSetup(); });
     $("#voiceToggle").addEventListener("change", (e) => (state.voiceCustomer = e.target.checked));
     $("#whisperToggle").addEventListener("change", (e) => (state.whisper = e.target.checked));
-    $("#micBtn").addEventListener("click", () => (state.listening ? stopMic() : startMic()));
+    $("#micBtn").addEventListener("click", () => { if (state.listening) { state.autoListen = false; stopMic(); } else startMic(); });
     $("#stopBtn").addEventListener("click", stopDemo);
     $("#copyBtn").addEventListener("click", () => copy($("#nextCard").dataset.say || ""));
     $("#speakBtn").addEventListener("click", () => { const s = $("#nextCard").dataset.say; if (s) speak(s, { quiet: true }); });
@@ -686,12 +699,12 @@
       const v = $("#textIn").value;
       $("#textIn").value = "";
       if (state.playing) stopDemo();
+      state.autoListen = false; stopMic();
       addTurn(state.role, v);
     });
 
     try {
-      const [cfg, scs, pers] = await Promise.all([api("/api/config"), api("/api/scenarios"), api("/api/personas")]);
-      state.aiEnabled = cfg.ai_second_opinion;
+      const [scs, pers] = await Promise.all([api("/api/scenarios"), api("/api/personas")]);
       state.scenarios = scs;
       state.personas = pers;
       const chips = $("#demoChips");
