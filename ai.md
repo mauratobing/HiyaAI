@@ -2,7 +2,7 @@
 
 ## Tools used to build this
 
-- **Claude (Anthropic), via Claude Code**: used as a coding agent to write most of the code in this repo (FastAPI backend, rule engine, optional LLM module, HTML/CSS/JS front end, tests, README), working from a spec I steered.
+- **Claude (Anthropic), via Claude Code**: used as a coding agent to write most of the code in this repo (FastAPI backend, rule engine, HTML/CSS/JS front end, tests, README), working from a spec I steered.
 - **Claude (chat)**: used earlier to brainstorm the idea, narrow it down, and map it to the challenge track.
 
 ## What I directed vs. what the AI wrote
@@ -20,8 +20,7 @@
 - **Text-to-speech:** the browser's built-in speech synthesis, for demo playback and optional spoken "whisper" nudges.
 - **Scoring and cue detection:** a deterministic, rule-based engine, with no model involved, so every score is explainable.
 - **Simulated customer (practice mode):** also rule-based, not a model. It reuses the coach's detectors to react to what the agent says and picks from written lines per persona.
-- **Optional second opinion:** if `ANTHROPIC_API_KEY` is set, `app/llm.py` asks a Claude model (default `claude-sonnet-5-5`, set via `ANTHROPIC_MODEL`) for up to three subtle concerns, returned as JSON. It runs asynchronously and any failure is swallowed so it can't break a live call. This path was **not run against the real API** during development (no key in the build environment); only its JSON parsing is unit-tested.
 
 ## Data and sensitivity
 
-Care looks for words that can signal health, bereavement or money problems. It does this in memory only: no audio is recorded or stored, the server keeps no state, and the recap is generated on request and is not saved. Cues are treated as prompts to listen more closely, never as a diagnosis. Transcript text is only sent to a third party if the optional API key is set (and, for the microphone, to the browser's own speech-recognition service).
+Care looks for words that can signal health, bereavement or money problems. It does this in memory only: no audio is recorded or stored, the server keeps no state, and the recap is generated on request and is not saved. Cues are treated as prompts to listen more closely, never as a diagnosis. No transcript text is sent to any AI service by Care. The only third party involved is the browser's own speech-recognition service, if you use the microphone.
