@@ -49,7 +49,11 @@ with sync_playwright() as p:
     pg.screenshot(path=out / "6-setup.png")
     pg.click(".persona >> text=Recently bereaved")
     pg.click("text=Start call")
-    # the call opens with the agent, not the customer
+    # nothing is said for you: the customer stays silent until the agent introduces themselves
+    pg.wait_for_selector("#introCard")
+    assert pg.locator(".msg").count() == 0, "no auto-sent opening"
+    pg.screenshot(path=out / "6a-intro-card.png")
+    pg.click("#introCard >> text=Send intro")
     pg.wait_for_selector(".msg.agent .bubble >> text=Hi, it's Sam from Northbridge Finance.")
     assert pg.locator(".msg").first.get_attribute("class").split()[1] == "agent", "agent should speak first"
     pg.wait_for_selector(".msg.customer .bubble >> text=What's it about?", timeout=15000)
@@ -76,6 +80,8 @@ with sync_playwright() as p:
     pg.fill("[aria-label='Your name']", "Priya")
     pg.fill("[aria-label='Your company']", "Acme Finance")
     pg.click("text=Start call")
+    pg.wait_for_selector("#introCard")
+    pg.click("#introCard >> text=Send intro")
     pg.wait_for_selector(".msg.agent .bubble >> text=Hi, it's Priya from Acme Finance.")
     pg.wait_for_selector(".msg.customer .bubble >> text=What's this about?", timeout=15000)
     say("I'm calling about your account.", 4)
