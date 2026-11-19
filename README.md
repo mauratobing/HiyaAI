@@ -30,7 +30,7 @@ Open <http://localhost:8000>.
 
 ### Try it
 
-1. **Start a practice call:** click **New call**, choose a customer (recently bereaved, hard of hearing, money worries, anxious and overwhelmed, or wary after a scam warning), optionally rename them, set your own name and company, and press **Start call**. **The call opens with you**: "Hi, it's Sam from Northbridge Finance." (spoken aloud, and counted as saying your name and company). Then speak (mic) or type as the agent. A **simulated customer answers back**, reacting to what you actually say:
+1. **Start a practice call:** click **New call**, choose a customer (recently bereaved, hard of hearing, money worries, anxious and overwhelmed, or wary after a scam warning), optionally rename them, set your own name and company, and press **Start call**. **You open the call yourself.** Nothing is said for you: a box appears with a ready-made intro ("Hi, it's Sam from Northbridge Finance."). Edit it and press **Send intro**, or press **Say it instead** and say it out loud. It counts as saying your name and company. Then speak (mic) or type as the agent. A **simulated customer answers back**, reacting to what you actually say:
    - you haven't said who you are → "Sorry, who is this?" (and they hang up if it continues)
    - you've introduced yourself → "What's it about?", and once you say why you're calling they tell you what's going on
    - you acknowledge, slow down, or offer a pause, a trusted person or support → they soften, and eventually accept
@@ -47,17 +47,9 @@ Open <http://localhost:8000>.
 3. **Free mode:** press the mic and speak as the agent. Flip to *I'm the customer* to play the other side (try "My husband passed away last month and I'm a bit confused"), or just type.
 4. Tap **Share recap** for an audit-style summary you can download as Markdown.
 
-The demos and practice calls need no mic, no API key and no internet beyond localhost. With **Voice the customer** on, the customer's replies are spoken aloud by the browser (the mic is paused while they talk, so it doesn't hear itself).
+The demos and practice calls need no mic and no internet beyond localhost. With **Voice the customer** on, the customer's replies are spoken aloud by the browser. The mic takes one turn at a time: it switches off when you stop talking and stays off while the customer speaks (so it never hears them as you). In a practice call it turns back on by itself after each customer reply; press the mic to stop it, or type instead.
 
 The simulated customer is **rule-based, not an AI model**: it uses the same detectors as the coach, picks from written lines per persona, and will repeat itself in long calls. An LLM-driven customer is the obvious next step.
-
-### Optional: AI second opinion
-
-```bash
-export ANTHROPIC_API_KEY=sk-...        # see .env.example
-```
-
-With a key, Claude adds a second opinion on subtle things the rules can't see (implied pressure, evasiveness). It appears as extra cards marked **AI** and never blocks the live nudges. Transcript *text* is sent to the API when this is on. This path was not run against the real API during development; the response parser is unit-tested.
 
 ## How it works
 
@@ -65,8 +57,6 @@ With a key, Claude adds a second opinion on subtle things the rules can't see (i
 mic ─► browser speech-to-text ─► POST /api/analyze ─► rule engine (app/analyzer.py)
                                                           │
    gauge · care cues · adaptations · flags · next step ◄──┘
-                                                          │ (optional, async)
-                          Claude second opinion ◄─────────┘ /api/second_opinion
 ```
 
 - **Care cues (customer):** life event, health, money worries, finding it hard to follow, asked you to slow down or repeat, stressed or upset.
@@ -127,8 +117,7 @@ One test checks that **Care's own suggested wording never trips its own risk fla
 ```
 app/analyzer.py     scoring engine (cues, adaptations, rules, score, recap)
 app/customer.py     the simulated customer (5 personas, reacts to what the agent says)
-app/llm.py          optional Claude second opinion
-app/main.py         FastAPI: /api/analyze, /api/recap, /api/customer_reply, /api/personas, /api/second_opinion, static files
+app/main.py         FastAPI: /api/analyze, /api/recap, /api/customer_reply, /api/personas, static files
 app/scenarios.json  the three demo calls
 static/             hand-written HTML/CSS/JS front end (no framework, no build step)
 tests/              unit tests + browser smoke test
