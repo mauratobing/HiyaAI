@@ -1,6 +1,10 @@
-# Care
+# HiyaCare
 
 **A live coach for business calls with customers who may need more support.**
+
+[![Care demo: a practice call where the agent rushes a bereaved customer](https://github.com/user-attachments/assets/2c9485cb-b030-4e5b-b48b-bde4679bedb3)](https://github.com/mauratobing/HiyaAI/releases/tag/v1.0.0)
+
+[Watch the demo video](https://github.com/mauratobing/HiyaAI/releases/tag/v1.0.0)
 
 Branded caller ID tells a customer *who* is calling before they pick up. Care helps the person on the call *notice when that customer needs more time or support, and respond well*, so a legitimate call doesn't end up harming (or frightening) someone who is bereaved, unwell, worried about money, or struggling to follow.
 
