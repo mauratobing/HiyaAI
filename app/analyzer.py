@@ -287,7 +287,10 @@ RULES: list[Rule] = [
     ),
     Rule(
         "threat", "Leaned on a threat or consequence", "medium",
-        _r(r"\b(?:arrest(?:ed)?|prosecut\w*|bailiffs?|warrant|police|legal action|court|(?:be|been|get|will be) (?:frozen|suspended|closed|cancelled|seized)|repossess\w*|seiz\w*)"),
+        _r(r"\b(?:arrest(?:ed)?|prosecut\w*|bailiffs?|warrant|police|legal action|court|(?:be|been|get|will be) (?:frozen|suspended|closed|cancelled|seized)|repossess\w*|seiz\w*"
+           r"|(?:cancel|terminate|terminating|end|ending|withdraw|withdrawing)\w* (?:the |our |your |this )?(?:\w+ )?(?:agreement|contract|account)"
+           r"|(?:pass|passed|passing|hand|handed|refer|referred) (?:it |this |you |your account )?(?:over )?to (?:collections|a debt|our recoveries|recoveries)"
+           r"|(?:damage|affect|hurt|harm) your credit|default(?:ed|ing)? on|take (?:the|your) (?:car|vehicle) (?:back|away))"),
         "Consequences can be explained factually, but leading with them sounds like intimidation.",
         "I'd like to help you avoid that. Here are the options available to you today.",
     ),
@@ -425,6 +428,8 @@ def analyze_call(turns: list[dict]) -> dict:
 
             # ---- how the agent responds to a customer who may need more care
             adapt = {k for k, p in _ADAPT.items() if p.search(text)}
+            if rule_hits & _PRESSURE_RULES:
+                adapt -= {"pause"}  # "no pressure, but…" followed by a consequence is not a pause
             if care_active:
                 actions |= adapt
                 if (pay or rule_hits & _PRESSURE_RULES) and not (adapt - {"ack"}):
