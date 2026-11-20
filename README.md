@@ -51,17 +51,9 @@ Open <http://localhost:8000>.
 3. **Free mode:** press the mic and speak as the agent. Flip to *I'm the customer* to play the other side (try "My husband passed away last month and I'm a bit confused"), or just type.
 4. Tap **Share recap** for an audit-style summary you can download as Markdown.
 
-The demos and practice calls need no mic, no API key and no internet beyond localhost. With **Voice the customer** on, the customer's replies are spoken aloud by the browser (the mic is paused while they talk, so it doesn't hear itself).
+The demos and practice calls need no mic and no internet beyond localhost. With **Voice the customer** on, the customer's replies are spoken aloud by the browser (the mic is paused while they talk, so it doesn't hear itself).
 
 The simulated customer is **rule-based, not an AI model**: it uses the same detectors as the coach, picks from written lines per persona, and will repeat itself in long calls. An LLM-driven customer is the obvious next step.
-
-### Optional: AI second opinion
-
-```bash
-export ANTHROPIC_API_KEY=sk-...        # see .env.example
-```
-
-With a key, Claude adds a second opinion on subtle things the rules can't see (implied pressure, evasiveness). It appears as extra cards marked **AI** and never blocks the live nudges. Transcript *text* is sent to the API when this is on. This path was not run against the real API during development; the response parser is unit-tested.
 
 ## How it works
 
@@ -69,8 +61,7 @@ With a key, Claude adds a second opinion on subtle things the rules can't see (i
 mic ─► browser speech-to-text ─► POST /api/analyze ─► rule engine (app/analyzer.py)
                                                           │
    gauge · care cues · adaptations · flags · next step ◄──┘
-                                                          │ (optional, async)
-                          Claude second opinion ◄─────────┘ /api/second_opinion
+
 ```
 
 - **Care cues (customer):** life event, health, money worries, finding it hard to follow, asked you to slow down or repeat, stressed or upset.
@@ -131,8 +122,7 @@ One test checks that **Care's own suggested wording never trips its own risk fla
 ```
 app/analyzer.py     scoring engine (cues, adaptations, rules, score, recap)
 app/customer.py     the simulated customer (5 personas, reacts to what the agent says)
-app/llm.py          optional Claude second opinion
-app/main.py         FastAPI: /api/analyze, /api/recap, /api/customer_reply, /api/personas, /api/second_opinion, static files
+app/main.py         FastAPI: /api/analyze, /api/recap, /api/customer_reply, /api/personas, static files
 app/scenarios.json  the three demo calls
 static/             hand-written HTML/CSS/JS front end (no framework, no build step)
 tests/              unit tests + browser smoke test
