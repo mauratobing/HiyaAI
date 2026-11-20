@@ -23,4 +23,4 @@
 
 ## Data and sensitivity
 
-Care looks for words that can signal health, bereavement or money problems. It does this in memory only: no audio is recorded or stored, the server keeps no state, and the recap is generated on request and is not saved. Cues are treated as prompts to listen more closely, never as a diagnosis. No transcript text is sent to any AI service by Care. The only third party involved is the browser's own speech-recognition service, if you use the microphone.
+Care turns live speech into text using the browser’s built-in speech recognition (a cloud service run by the browser vendor in Chrome), then analyses that text on the machine it runs on. It looks for words that can signal health, bereavement or money problems. It does this in memory only: no audio is recorded or stored by Care, the server keeps no state, and the recap is generated on request and not saved. Cues are treated as prompts to listen more closely, never as a diagnosis.
