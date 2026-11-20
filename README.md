@@ -1,6 +1,10 @@
-# Care
+# HiyaCare
 
 **A live coach for business calls with customers who may need more support.**
+
+[![Care demo: a practice call where the agent rushes a bereaved customer](https://github.com/user-attachments/assets/2c9485cb-b030-4e5b-b48b-bde4679bedb3)](https://github.com/mauratobing/HiyaAI/releases/tag/v1.0.0)
+
+▶ [Watch the demo video](https://github.com/mauratobing/HiyaAI/releases/tag/v1.0.0)
 
 Branded caller ID tells a customer *who* is calling before they pick up. Care helps the person on the call *notice when that customer needs more time or support, and respond well*, so a legitimate call doesn't end up harming (or frightening) someone who is bereaved, unwell, worried about money, or struggling to follow.
 
@@ -47,6 +51,7 @@ Open <http://localhost:8000>.
 3. **Free mode:** press the mic and speak as the agent. Flip to *I'm the customer* to play the other side (try "My husband passed away last month and I'm a bit confused"), or just type.
 4. Tap **Share recap** for an audit-style summary you can download as Markdown.
 
+The demos and practice calls need no mic and no internet beyond localhost. With **Voice the customer** on, the customer's replies are spoken aloud by the browser (the mic is paused while they talk, so it doesn't hear itself).
 The demos and practice calls need no mic and no internet beyond localhost. With **Voice the customer** on, the customer's replies are spoken aloud by the browser. The mic takes one turn at a time: it switches off when you stop talking and stays off while the customer speaks (so it never hears them as you). In a practice call it turns back on by itself after each customer reply; press the mic to stop it, or type instead.
 
 The simulated customer is **rule-based, not an AI model**: it uses the same detectors as the coach, picks from written lines per persona, and will repeat itself in long calls. An LLM-driven customer is the obvious next step.
@@ -57,6 +62,7 @@ The simulated customer is **rule-based, not an AI model**: it uses the same dete
 mic ─► browser speech-to-text ─► POST /api/analyze ─► rule engine (app/analyzer.py)
                                                           │
    gauge · care cues · adaptations · flags · next step ◄──┘
+
 ```
 
 - **Care cues (customer):** life event, health, money worries, finding it hard to follow, asked you to slow down or repeat, stressed or upset.
@@ -117,6 +123,7 @@ One test checks that **Care's own suggested wording never trips its own risk fla
 ```
 app/analyzer.py     scoring engine (cues, adaptations, rules, score, recap)
 app/customer.py     the simulated customer (5 personas, reacts to what the agent says)
+app/main.py         FastAPI: /api/analyze, /api/recap, /api/customer_reply, /api/personas, static files
 app/main.py         FastAPI: /api/analyze, /api/recap, /api/customer_reply, /api/personas, static files
 app/scenarios.json  the three demo calls
 static/             hand-written HTML/CSS/JS front end (no framework, no build step)
